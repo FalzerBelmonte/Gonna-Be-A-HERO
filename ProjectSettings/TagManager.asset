@@ -13,6 +13,7 @@ TagManager:
   - ClosedDoor
   - Rock
   - PlayerGrabPoint
+  - Shield
   layers:
   - Default
   - TransparentFX

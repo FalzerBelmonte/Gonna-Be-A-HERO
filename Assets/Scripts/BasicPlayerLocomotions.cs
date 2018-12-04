@@ -25,10 +25,7 @@ public class BasicPlayerLocomotions : MonoBehaviour {
     public bool isImmortal; // If the player is immune to taking damage or not
 
     //Player Stats Variables
-    public float hpCurrent;
-    public float hpMax;
-    public Image healthBar;
-	private float GracePeriod;
+    private float GracePeriod;
 	
 	public bool facingRight = true;
 
@@ -42,12 +39,18 @@ public class BasicPlayerLocomotions : MonoBehaviour {
 
 	
 	private Animator anims;
+    private GameObject childOBJ;
+
+    public bool isShield;
+
+    public float shieldPower;
 
 
     // Use this for initialization
     void Start () {
 
-
+        shieldPower = 2;
+        isShield = false;
         isGrounded = false;
         moveSpeed = 10.0f;
         maxSpeed = 2.0f;
@@ -60,11 +63,10 @@ public class BasicPlayerLocomotions : MonoBehaviour {
         iFramesValue = 30;
         isImmortal = false;
         jumpPress = false;
-        hpMax = 10.0f;
-        hpCurrent = hpMax;
-		GracePeriod = 2;
+        GracePeriod = 2;
 		
 		anims =  this.gameObject.transform.GetChild(0).gameObject.GetComponent<Animator>();
+        childOBJ = this.gameObject.transform.GetChild(1).gameObject;
         
 
 
@@ -77,6 +79,19 @@ public class BasicPlayerLocomotions : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
+
+        if(shieldPower > 0)
+        {
+            isShield = true;
+            childOBJ.SetActive(true);
+        }
+
+        else
+        {
+            isShield = false;
+            childOBJ.SetActive(false);
+        }
+
 
 		GracePeriod -= 1;
         //Checks if the player still has iFrames, and if they should be immortal or not
@@ -187,6 +202,17 @@ public class BasicPlayerLocomotions : MonoBehaviour {
             }
         }
 
+
+        if (collision.gameObject.tag == "Shield")
+        {
+            if (isShield == false)
+            {
+                Destroy(collision.gameObject);
+                GetShield();
+            }
+        }
+
+
         if (collision.gameObject.tag == "Hostile")
         {
             //Pulls the information of the enemy collided with
@@ -291,23 +317,29 @@ public class BasicPlayerLocomotions : MonoBehaviour {
 
     void takeDamage()
     {
-        healthBar.fillAmount = hpCurrent / hpMax;
+        
 
         if (isImmortal == false)
         {
-            rb2d.velocity = new Vector2(rb2d.velocity.x, hurtjumpPower);
-							anims.SetBool("isJumping", true);
-				GracePeriod = 2;
-            iFrames += iFramesValue;
-            hpCurrent -= (enemyStats.attackDamage / 2 );
+            if (isShield == true)
+            {
+                
+                shieldPower -= 1;
+                rb2d.velocity = new Vector2(rb2d.velocity.x, hurtjumpPower);
+                anims.SetBool("isJumping", true);
+                GracePeriod = 2;
+                iFrames += iFramesValue;
+                
 
+            }
 
-            if(hpCurrent <= 0)
+            else
             {
                 director.LoseLevel();
-                hpCurrent = hpMax;
-                healthBar.fillAmount = hpCurrent / hpMax;
+                
+                
             }
+
         }
     }
 	
@@ -319,5 +351,10 @@ public class BasicPlayerLocomotions : MonoBehaviour {
         Scaler.x *= -1;
         transform.localScale = Scaler;
 
+    }
+
+    void GetShield()
+    {
+        shieldPower = 2;
     }
 }
