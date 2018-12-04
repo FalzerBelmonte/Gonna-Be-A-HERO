@@ -28,6 +28,9 @@ public class BasicPlayerLocomotions : MonoBehaviour {
     public float hpCurrent;
     public float hpMax;
     public Image healthBar;
+	private float GracePeriod;
+	
+	public bool facingRight = true;
 
 
 
@@ -37,6 +40,8 @@ public class BasicPlayerLocomotions : MonoBehaviour {
     private enemyEntity enemyAI; // The main enemy script, this is also needed when pulling an enemy's data
     public Director director; // The Level controller
 
+	
+	private Animator anims;
 
 
     // Use this for initialization
@@ -48,8 +53,8 @@ public class BasicPlayerLocomotions : MonoBehaviour {
         maxSpeed = 2.0f;
         jumpMax = 2.0f;
         jumpCount = jumpMax;
-        jumpPower = 3.5f;
-        doublejumpPower = 2.5f;
+        jumpPower = 4.5f;
+        doublejumpPower = 4.0f;
         hurtjumpPower = 1.5f;
         iFrames = 0;
         iFramesValue = 30;
@@ -57,6 +62,9 @@ public class BasicPlayerLocomotions : MonoBehaviour {
         jumpPress = false;
         hpMax = 10.0f;
         hpCurrent = hpMax;
+		GracePeriod = 2;
+		
+		anims =  this.gameObject.transform.GetChild(0).gameObject.GetComponent<Animator>();
         
 
 
@@ -70,7 +78,7 @@ public class BasicPlayerLocomotions : MonoBehaviour {
 	// Update is called once per frame
 	void Update () {
 
-
+		GracePeriod -= 1;
         //Checks if the player still has iFrames, and if they should be immortal or not
         checkImmortality();
 		
@@ -79,12 +87,29 @@ public class BasicPlayerLocomotions : MonoBehaviour {
             //Resets their number of allowed jumps
             ReloadJumps();
             //other features such as setting the animation handler to preform a landing animation, or cancelling some of the airborne only abilities that may or may not exist.
-        }
+        } else {
+			
+		}
 
         //Gets input values from Unity's built in engine and moves horizontally based on this
         float h = Input.GetAxis("Horizontal");
         float hMove = h * moveSpeed;
         rb2d.velocity = new Vector2(hMove, rb2d.velocity.y);
+		
+		if (h != 0){
+			anims.SetBool("isMoving", true);
+		} else {
+			anims.SetBool("isMoving", false);
+		}
+		
+		        if (facingRight == false && h > 0)
+        {
+            Flip();
+        }
+        else if (facingRight == true && h < 0)
+        {
+            Flip();
+        }
 
         //Prevents the player from moving TOO fast
         if (rb2d.velocity.x > maxSpeed)
@@ -106,12 +131,14 @@ public class BasicPlayerLocomotions : MonoBehaviour {
             {
                 doJump();
                 jumpPress = true;
+				anims.SetBool("isJumping", true);
+				GracePeriod = 2;
             }
         }
 
         if (Input.GetKeyDown("e"))
         {
-            director.LoseLevel();
+           // director.LoseLevel();
         }
 
         if (Input.GetKeyDown("q"))
@@ -135,13 +162,17 @@ public class BasicPlayerLocomotions : MonoBehaviour {
  
     {
   
-        if (collision.gameObject.tag == "Platform")
+        if (collision.gameObject.tag == "Platform" || collision.gameObject.tag == "Rock"  )
         {
             if(transform.position.y > collision.transform.position.y)
             {
+		if (GracePeriod <= 0){
+			    anims.SetBool("isJumping", false);
+		}
                 ReloadJumps();
             }
-        }
+        } 
+		
 
 
         if (collision.gameObject.tag == "Hazard")
@@ -163,6 +194,7 @@ public class BasicPlayerLocomotions : MonoBehaviour {
             enemyAI = collision.gameObject.GetComponent<enemyEntity>();
 
             //Grabs all corners of the collision and then Draws a Line to find where the impact came from
+
             foreach (ContactPoint2D point in collision.contacts)
             {
                 //If the player landed on top the enemy with a 0.1 margin for comfort
@@ -177,15 +209,22 @@ public class BasicPlayerLocomotions : MonoBehaviour {
                     }
                     else
                     {
+									if (enemyAI.isWounded == true){
+										enemyAI.die();
+									}
+									else{
                         enemyAI.getHurt();
+									}
                         rb2d.velocity = new Vector2(rb2d.velocity.x, doublejumpPower);
 
                     }
                 }
                 else
                 {
+					if (enemyAI.isWounded == false){
                     iFrames += 1;
                     takeDamage();
+					}
                 }
             }
         }
@@ -257,6 +296,8 @@ public class BasicPlayerLocomotions : MonoBehaviour {
         if (isImmortal == false)
         {
             rb2d.velocity = new Vector2(rb2d.velocity.x, hurtjumpPower);
+							anims.SetBool("isJumping", true);
+				GracePeriod = 2;
             iFrames += iFramesValue;
             hpCurrent -= (enemyStats.attackDamage / 2 );
 
@@ -268,5 +309,15 @@ public class BasicPlayerLocomotions : MonoBehaviour {
                 healthBar.fillAmount = hpCurrent / hpMax;
             }
         }
+    }
+	
+	    void Flip()
+    {
+
+        facingRight = !facingRight;
+        Vector3 Scaler = transform.localScale;
+        Scaler.x *= -1;
+        transform.localScale = Scaler;
+
     }
 }

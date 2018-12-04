@@ -8,6 +8,11 @@ TagManager:
   - Hostile
   - Hazard
   - Star
+  - Director
+  - Door
+  - ClosedDoor
+  - Rock
+  - PlayerGrabPoint
   layers:
   - Default
   - TransparentFX

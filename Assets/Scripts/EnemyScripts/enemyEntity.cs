@@ -24,11 +24,19 @@ public class enemyEntity : MonoBehaviour {
     private RaycastHit2D isGrounded2;
     private RaycastHit2D isGrounded3;
     private bool firstGrounded;
+	private float GracePeriod;
     float myWidth;
     public LayerMask enemyMask;
     private Rigidbody2D rb2d; // The name of the Rigidbody we'll use
     private Transform myTransform;
     private GameObject player;
+	private GameObject playerGrabPoint;
+	private float iFrames;
+	public bool isWounded;
+	public bool isHeld;
+	public bool isGrabable = false;
+	private Animator anims;
+	public bool facingRight = true;
 
 
     // Use this for initialization
@@ -41,6 +49,17 @@ public class enemyEntity : MonoBehaviour {
         myTransform = this.transform;
         firstGrounded = false; // A debugging variable that fixes any oddities with enemies being airborne before hitting the ground for the first time
         player = GameObject.FindWithTag("Player"); // Getting the player Object
+		playerGrabPoint = GameObject.FindWithTag("PlayerGrabPoint");
+		GracePeriod = 2.0f;
+		iFrames = 0;
+		isWounded = false;
+		isHeld = false;
+		
+		anims =  this.gameObject.transform.GetChild(0).gameObject.GetComponent<Animator>();
+		
+		   Vector2 myVel = rb2d.velocity;
+            myVel.x = -moveSpeed;
+            rb2d.velocity = myVel;
 
         //Variable assignment for WallRider specific entities
         if (isWallRider == true)
@@ -51,11 +70,40 @@ public class enemyEntity : MonoBehaviour {
 	
 	// Update is called once per frame
 	void FixedUpdate () {
+		
+		GracePeriod -= 1;
+		iFrames -= 1;
+
+		if (isHeld == true){
+			iFrames = 300;
+			isGrabable = true;
+			rb2d.velocity = Vector2.zero;
+			this.transform.position = playerGrabPoint.gameObject.transform.position;
+		}
+		if (iFrames <= 0){
+			isWounded = false;
+			anims.SetBool("isHurt", false);
+		}
+		
 
         if(TargetPlayer == true)
         {
             facePlayer();
         }
+		 if(isGrabable == true && Input.GetKeyDown(KeyCode.E))
+		        {
+					if (isHeld == false){
+			print ("Grabbed");
+            getPickedUp();
+			this.transform.SetParent(playerGrabPoint.transform);
+					} else {
+						print ("Thrown");
+						getThrown();
+							this.transform.SetParent(null);
+					}
+        }
+
+		
 
         //Checks if ground is in front of them
         if (isWallRider == false)
@@ -155,7 +203,7 @@ public class enemyEntity : MonoBehaviour {
 
 
             //Move Forward Constantly if isPatrolling is enabled
-            if (isPatrolling == true && isWallRider == false)
+            if (isPatrolling == true && isWallRider == false && isWounded == false)
         {
             Vector2 myVel = rb2d.velocity;
             myVel.x = -moveSpeed;
@@ -191,11 +239,19 @@ public class enemyEntity : MonoBehaviour {
         }
 		
 	}
+	
 
     public void getHurt()
     {
         // If enemy is instructed to take damage
-        Destroy(gameObject);
+       isWounded = true;
+	   anims.SetBool("isHurt", true);
+	   iFrames = 300;
+	   GracePeriod = 2;
+	    Vector2 myVel = rb2d.velocity;
+	   myVel.x = 0;
+	   myVel.y = 2;
+	   rb2d.velocity = myVel;
     }
 
     //Constantly faces the player
@@ -246,4 +302,72 @@ public class enemyEntity : MonoBehaviour {
 
 
     }
+	
+	
+	  private void OnCollisionStay2D(Collision2D collision)
+    {
+  
+        if (collision.gameObject.tag == "Rock")
+        {
+			if (isWounded == true){
+				rb2d.velocity = Vector2.zero;
+			} else{
+			if (GracePeriod < 1){
+				
+				GracePeriod = 2;
+			
+                        Vector3 CurrRot = myTransform.eulerAngles; // Gets current Rotations
+                                                                   // IF the AI doesn't target the player, change rotation
+                        if (TargetPlayer == false)
+                        {
+                                CurrRot.y += 180; // Flips Rotation
+								facingRight = !facingRight;
+                        }
+                        myTransform.eulerAngles = CurrRot; // Applies New Rotations
+                        moveSpeed = -moveSpeed; // Reverses moveSpeed in order to move the opposite direction
+			}
+        }
+		}
+		if (collision.gameObject.tag == "Rock" && isWounded == true){
+			rb2d.velocity = Vector2.zero;
+		}
+	}
+	
+	private void OnTriggerEnter2D(Collider2D collision)
+	{
+		        if (collision.gameObject.tag == "Player" && isWounded == true){
+					       isGrabable = true;
+				} else {
+					isGrabable = false;
+				}
+
+	}
+	private void getPickedUp()
+	{
+		isHeld = true;
+	}
+		private void getThrown()
+	{
+		isHeld = false;
+		if (player.GetComponent<BasicPlayerLocomotions>().facingRight == true){
+			        Vector2 myVel = rb2d.velocity;
+        myVel.x = 2;
+        myVel.y = 1;
+        rb2d.velocity = myVel;
+		facingRight = true;
+		} else {
+		Vector2 myVel = rb2d.velocity;
+        myVel.x = -2;
+        myVel.y = 1;
+        rb2d.velocity = myVel;
+		facingRight = false;
+		}
+	}
+	
+	public void die()
+	{
+		if (GracePeriod <= 0){
+		Destroy(gameObject);
+		}
+	}
 }
