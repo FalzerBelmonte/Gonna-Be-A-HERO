@@ -42,13 +42,37 @@ public class BasicPlayerLocomotions : MonoBehaviour {
     private GameObject childOBJ;
 
     public bool isShield;
+    public bool isCape;
+    public bool isBoots;
+    public bool isGoggles;
 
     public float shieldPower;
+    public float baseSpeed;
+    public float bootSpeed;
+
+    // Buff stuff
+    public GameObject blinkWaypoint;
+    public float blinkCooldown;
+    public float maxBlinkCooldown;
+
+    // Sprites
+    public GameObject forwardCape;
+    public GameObject runningCape;
+    public GameObject forwardGoggles;
+    public GameObject runningGoggles;
+    public GameObject bootsParticles;
+
+    public bool isRunning;
+
+
+
 
 
     // Use this for initialization
     void Start () {
 
+        bootsParticles.SetActive(false);
+        isGoggles = false;
         shieldPower = 2;
         isShield = false;
         isGrounded = false;
@@ -79,6 +103,56 @@ public class BasicPlayerLocomotions : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
+
+        bootsParticles.SetActive(isBoots);
+
+        if(isRunning == true && isGoggles == true)
+        {
+            runningGoggles.SetActive(true);
+            forwardGoggles.SetActive(false);
+            forwardCape.SetActive(false);
+            //runningCape.SetActive(false);
+        }
+
+        if (isRunning == false && isGoggles == true)
+        {
+            runningGoggles.SetActive(false);
+            forwardGoggles.SetActive(true);
+            //forwardCape.SetActive(false);
+            runningCape.SetActive(false);
+        }
+
+        if (isRunning == false && isCape == true)
+        {
+            runningGoggles.SetActive(false);
+            //forwardGoggles.SetActive(false);
+            forwardCape.SetActive(true);
+            runningCape.SetActive(false);
+        }
+
+        if (isRunning == true && isCape == true)
+        {
+            //runningGoggles.SetActive(false);
+            forwardGoggles.SetActive(false);
+            forwardCape.SetActive(false);
+            runningCape.SetActive(true);
+        }
+
+
+
+        blinkCooldown -= Time.deltaTime;
+        blinkWaypoint.gameObject.GetComponent<SpriteRenderer>().enabled = isGoggles; 
+
+
+        if (isBoots == true)
+        {
+            moveSpeed = bootSpeed;
+        }
+
+        else
+        {
+            moveSpeed = baseSpeed;
+        }
 
         if(shieldPower > 0)
         {
@@ -113,8 +187,10 @@ public class BasicPlayerLocomotions : MonoBehaviour {
 		
 		if (h != 0){
 			anims.SetBool("isMoving", true);
+            isRunning = true;
 		} else {
 			anims.SetBool("isMoving", false);
+            isRunning = false;
 		}
 		
 		        if (facingRight == false && h > 0)
@@ -156,15 +232,28 @@ public class BasicPlayerLocomotions : MonoBehaviour {
            // director.LoseLevel();
         }
 
-        if (Input.GetKeyDown("q"))
-        {
-            director.CompleteLevel();
-        }
+        //if (Input.GetKeyDown("q"))
+        //{
+        //    director.CompleteLevel();
+        //}
 
         if (Input.GetKeyUp("space"))
         {
             jumpPress = false;
 
+        }
+
+        // Goggles
+        if (isGoggles && blinkCooldown <= 0 && Input.GetKeyDown(KeyCode.Q))
+        {
+            transform.position = blinkWaypoint.transform.position;
+            blinkCooldown = maxBlinkCooldown;
+            blinkWaypoint.gameObject.GetComponent<SpriteRenderer>().enabled = false;
+        }
+
+        if (isGoggles && blinkCooldown <= 0)
+        {
+            blinkWaypoint.gameObject.GetComponent<SpriteRenderer>().enabled = true;
         }
 
 
@@ -209,6 +298,36 @@ public class BasicPlayerLocomotions : MonoBehaviour {
             {
                 Destroy(collision.gameObject);
                 GetShield();
+            }
+        }
+
+        if (collision.gameObject.tag == "Boots")
+        {
+            if (isBoots == false)
+            {
+                Destroy(collision.gameObject);
+                isBoots = true;
+               // GetBoots();
+            }
+        }
+
+        if (collision.gameObject.tag == "Goggles")
+        {
+            if (isGoggles == false)
+            {
+                Destroy(collision.gameObject);
+                isGoggles = true; 
+                //GetGoggles();
+            }
+        }
+
+        if (collision.gameObject.tag == "Cape")
+        {
+            if (isCape == false)
+            {
+                Destroy(collision.gameObject);
+                isCape = true;
+                //GetCape();
             }
         }
 
@@ -323,15 +442,27 @@ public class BasicPlayerLocomotions : MonoBehaviour {
         {
             if (isShield == true)
             {
-                
+
                 shieldPower -= 1;
                 rb2d.velocity = new Vector2(rb2d.velocity.x, hurtjumpPower);
                 anims.SetBool("isJumping", true);
                 GracePeriod = 2;
                 iFrames += iFramesValue;
-                
+
 
             }
+
+            else if (isShield == false && (isCape == true || isBoots == true || isGoggles == true))
+            {
+                isGoggles = false;
+                isCape = false;
+                isBoots = false;
+                forwardGoggles.SetActive(false);
+                forwardCape.SetActive(false);
+                runningCape.SetActive(false);
+                runningGoggles.SetActive(false);
+            }
+
 
             else
             {
@@ -352,6 +483,8 @@ public class BasicPlayerLocomotions : MonoBehaviour {
         transform.localScale = Scaler;
 
     }
+
+
 
     void GetShield()
     {

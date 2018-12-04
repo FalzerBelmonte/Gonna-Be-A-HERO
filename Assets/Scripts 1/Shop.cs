@@ -61,10 +61,10 @@ public class Shop : MonoBehaviour {
     public void BuyCape()
     {
 
-        if(player.gameObject.GetComponent<Director>().gameCurrency >= capeCost && player.gameObject.GetComponent<PlayerController>().hasCape == false)
+        if(player.gameObject.GetComponent<Director>().gameCurrency >= capeCost && player.gameObject.GetComponent<BasicPlayerLocomotions>().isCape == false)
         {
             player.gameObject.GetComponent<Director>().LoseCurrency(capeCost);
-            player.gameObject.GetComponent<PlayerController>().hasCape = true;
+            player.gameObject.GetComponent<BasicPlayerLocomotions>().isCape = true;
             source.PlayOneShot(shopNoise, 1);
         }
         else
@@ -77,10 +77,10 @@ public class Shop : MonoBehaviour {
     public void BuyBoots()
     {
 
-        if (player.gameObject.GetComponent<Director>().gameCurrency >= bootCost && player.gameObject.GetComponent<PlayerController>().hasBoots == false)
+        if (player.gameObject.GetComponent<Director>().gameCurrency >= bootCost && player.gameObject.GetComponent<BasicPlayerLocomotions>().isBoots == false)
         {
             player.gameObject.GetComponent<Director>().LoseCurrency(bootCost);
-            player.gameObject.GetComponent<PlayerController>().hasBoots = true;
+            player.gameObject.GetComponent<BasicPlayerLocomotions>().isBoots = true;
             source.PlayOneShot(shopNoise, 1);
         }
         else
@@ -93,10 +93,10 @@ public class Shop : MonoBehaviour {
     public void BuyGoggles()
     {
 
-        if (player.gameObject.GetComponent<Director>().gameCurrency >= goggleCost && player.gameObject.GetComponent<PlayerController>().hasGoggles == false)
+        if (player.gameObject.GetComponent<Director>().gameCurrency >= goggleCost && player.gameObject.GetComponent<BasicPlayerLocomotions>().isGoggles == false)
         {
             player.gameObject.GetComponent<Director>().LoseCurrency(goggleCost);
-            player.gameObject.GetComponent<PlayerController>().hasGoggles = true;
+            player.gameObject.GetComponent<BasicPlayerLocomotions>().isGoggles = true;
             source.PlayOneShot(shopNoise, 1);
         }
         else
